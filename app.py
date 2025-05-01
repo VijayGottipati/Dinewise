@@ -730,4 +730,4 @@ def template_syntax_error(e):
                           message=f"Template syntax error: {str(e)}"), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5002)
+    app.run(debug=True, port=5001)
