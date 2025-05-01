@@ -1,3 +1,6 @@
+# =========================
+# Imports and Configuration
+# =========================
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import requests
 import os
@@ -13,13 +16,18 @@ import sys
 import uuid
 import jinja2
 
+# =========================
+# Flask App Initialization
+# =========================
 load_dotenv()
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev")
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
 
-# Firebase Admin SDK initialization
+# =========================
+# Firebase Admin SDK Initialization
+# =========================
 try:
     cred = credentials.Certificate('dinewise-1ade0-firebase-adminsdk-fbsvc-826e342dd1.json')
     firebase_admin.initialize_app(cred, {
@@ -29,7 +37,9 @@ try:
 except Exception as e:
     print(f"❌ Firebase Admin SDK Error: {str(e)}")
 
-# Pyrebase client initialization
+# =========================
+# Pyrebase Client Initialization
+# =========================
 try:
     with open('firebase_config.json', 'r') as f:
         firebase_config = json.load(f)
@@ -41,9 +51,12 @@ except Exception as e:
     firebase = None
     auth = None
 
+# =========================
+# API Keys and Global Variables
+# =========================
 YELP_API_KEY = os.getenv('YELP_API_KEY')
 YELP_ENDPOINT = 'https://api.yelp.com/v3/businesses'
-GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY') # Load Google Maps API Key
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 HEADERS = {'Authorization': f'Bearer {YELP_API_KEY}'}
 
 if not YELP_API_KEY:
@@ -60,7 +73,9 @@ users = {
     }
 }
 
-# Protect routes that require login and handle token refresh if needed
+# =========================
+# Login Required Decorator
+# =========================
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -109,6 +124,9 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# =========================
+# User Authentication: Login
+# =========================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -139,17 +157,13 @@ def login():
         except requests.exceptions.HTTPError as http_err:
             error_message = 'UNKNOWN_ERROR'
             try:
-                # Try to parse the JSON response first
                 error_json = http_err.response.json()
                 error_message = error_json.get('error', {}).get('message', 'UNKNOWN_ERROR')
                 print(f"Firebase Login HTTP Error (JSON): {error_message}")
             except Exception as json_err:
-                # Fallback: Check the string representation of the error
-                # This helps catch cases where .response or .json() fails (like the reported AttributeError)
                 error_text = str(http_err)
                 print(f"Firebase Login HTTP Error (Text): {error_text}. JSON parse failed: {json_err}")
-                error_message = error_text # Use the raw text which might contain the code
-
+                error_message = error_text
             if "INVALID_LOGIN_CREDENTIALS" in error_message or \
                "EMAIL_NOT_FOUND" in error_message or \
                "INVALID_PASSWORD" in error_message:
@@ -158,18 +172,20 @@ def login():
                 flash('This account has been disabled.', 'error')
             else:
                 flash(f'Login failed: {error_message}. Please try again later.', 'error')
-            # Explicitly return the login page after flashing the error
             return render_template('login.html')
         except requests.exceptions.ConnectionError as conn_err:
             print(f"Connection error during login: {str(conn_err)}")
             flash('Unable to connect to authentication service. Please check your internet connection.', 'error')
-            return render_template('login.html') # Return login page
+            return render_template('login.html')
         except Exception as e:
             print(f"Unexpected Login error: {str(e)}")
             flash('An unexpected error occurred during login. Please try again.', 'error')
-            return render_template('login.html') # Return login page
+            return render_template('login.html')
     return render_template('login.html')
 
+# =========================
+# User Authentication: Register
+# =========================
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -216,12 +232,18 @@ def register():
             flash('An unexpected error occurred. Please try again later.', 'error')
     return render_template('register.html')
 
+# =========================
+# User Logout
+# =========================
 @app.route('/logout')
 def logout():
     session.clear()
     flash('You have been logged out.', 'info')
     return redirect(url_for('index'))
 
+# =========================
+# Home Page and Restaurant Search
+# =========================
 @app.route('/', methods=['GET', 'POST'])
 def index():
     results = []
@@ -263,6 +285,9 @@ def index():
             flash("An unexpected error occurred. Please try again.", "error")
     return render_template('index.html', results=results)
 
+# =========================
+# Nearby Restaurant Search
+# =========================
 @app.route('/nearby', methods=['GET', 'POST'])
 def nearby():
     results = []
@@ -311,6 +336,9 @@ def nearby():
             flash("An unexpected error occurred. Please try again.", "error")
     return render_template('store_locator.html', results=results)
 
+# =========================
+# Restaurant Detail Page
+# =========================
 @app.route('/restaurant/<business_id>')
 def restaurant_detail(business_id):
     headers = {'Authorization': f'Bearer {YELP_API_KEY}'}
@@ -318,8 +346,8 @@ def restaurant_detail(business_id):
     yelp_reviews = []
     user_reviews = []
     dinewise_rating = None
-    weighted_average_rating = None # Renamed for clarity
-    total_combined_reviews = 0     # To store the total count
+    weighted_average_rating = None
+    total_combined_reviews = 0
     try:
         print(f"Fetching details for restaurant ID: {business_id}")
         response = requests.get(f'{YELP_ENDPOINT}/{business_id}', headers=headers)
@@ -369,12 +397,12 @@ def restaurant_detail(business_id):
                 total_dinewise_score = sum(float(review.get('rating', 0)) for review in user_reviews)
                 if dinewise_review_count > 0:
                     dinewise_rating = round(total_dinewise_score / dinewise_review_count, 1)
-                    total_score += total_dinewise_score # Add the sum of scores, not the average
+                    total_score += total_dinewise_score
                     total_reviews += dinewise_review_count
 
             if total_reviews > 0:
                 weighted_average_rating = round(total_score / total_reviews, 1)
-            total_combined_reviews = total_reviews # Store the total count
+            total_combined_reviews = total_reviews
 
             print(f"Found {len(user_reviews)} user reviews")
         except Exception as e:
@@ -396,26 +424,26 @@ def restaurant_detail(business_id):
             'categories': []
         }
         flash("Some restaurant information could not be loaded", "warning")
-    is_potentially_new = session.get('user') is not None # Simple check if logged in
-    # Ensure coordinates are available for the map
+    is_potentially_new = session.get('user') is not None
     coordinates = restaurant.get('coordinates') if restaurant else None
     latitude = coordinates.get('latitude') if coordinates else None
     longitude = coordinates.get('longitude') if coordinates else None
-    show_promo_banner = is_potentially_new # Set the flag based on your logic
-
+    show_promo_banner = is_potentially_new
     return render_template('restaurant_detail.html',
                          restaurant=restaurant,
                          yelp_reviews=yelp_reviews,
                          user_reviews=user_reviews,
                          dinewise_rating=dinewise_rating,
-                         weighted_average_rating=weighted_average_rating, # Pass weighted average
-                         total_combined_reviews=total_combined_reviews, # Pass total review count
-                         show_new_user_promo=show_promo_banner, # Pass the promo flag
-                         gmaps_api_key=GOOGLE_MAPS_API_KEY, # Pass Google Maps API key
-                         latitude=latitude, # Pass latitude
-                         longitude=longitude) # Pass longitude
+                         weighted_average_rating=weighted_average_rating,
+                         total_combined_reviews=total_combined_reviews,
+                         show_new_user_promo=show_promo_banner,
+                         gmaps_api_key=GOOGLE_MAPS_API_KEY,
+                         latitude=latitude,
+                         longitude=longitude)
 
-
+# =========================
+# Simple Restaurant Detail (for fallback/testing)
+# =========================
 @app.route('/simple-restaurant/<business_id>')
 def simple_restaurant_detail(business_id):
     headers = {'Authorization': f'Bearer {YELP_API_KEY}'}
@@ -434,6 +462,9 @@ def simple_restaurant_detail(business_id):
                          yelp_reviews=yelp_reviews,
                          user_reviews=user_reviews)
 
+# =========================
+# Add Review to Restaurant
+# =========================
 @app.route('/add_review/<business_id>', methods=['POST'])
 def add_review(business_id):
     rating = request.form.get('rating')
@@ -466,6 +497,9 @@ def add_review(business_id):
         flash("Error adding review. Please try again.", "error")
     return redirect(url_for('restaurant_detail', business_id=business_id))
 
+# =========================
+# Wishlist Page
+# =========================
 @app.route('/wishlist')
 @login_required
 def wishlist():
@@ -486,6 +520,9 @@ def wishlist():
             continue
     return render_template('wishlist.html', restaurants=restaurants)
 
+# =========================
+# Add to Wishlist
+# =========================
 @app.route('/add_to_wishlist/<business_id>')
 @login_required
 def add_to_wishlist(business_id):
@@ -502,6 +539,9 @@ def add_to_wishlist(business_id):
         flash('Restaurant is already in your wishlist.', 'info')
     return redirect(request.referrer or url_for('index'))
 
+# =========================
+# Remove from Wishlist
+# =========================
 @app.route('/remove_from_wishlist/<business_id>')
 @login_required
 def remove_from_wishlist(business_id):
@@ -515,6 +555,9 @@ def remove_from_wishlist(business_id):
         flash('Restaurant removed from wishlist.', 'success')
     return redirect(url_for('wishlist'))
 
+# =========================
+# Yelp Autocomplete API Endpoint
+# =========================
 @app.route('/api/autocomplete')
 def autocomplete():
     term = request.args.get('term', '')
@@ -536,6 +579,9 @@ def autocomplete():
         print("Autocomplete Error:", e)
         return jsonify([])
 
+# =========================
+# Debug: Yelp API Test Endpoint
+# =========================
 @app.route('/debug/api-test')
 def debug_api_test():
     if not app.debug:
@@ -566,6 +612,9 @@ def debug_api_test():
         results['error'] = str(e)
     return jsonify(results)
 
+# =========================
+# Debug: Firebase Auth Test Endpoint
+# =========================
 @app.route('/debug/auth-test', methods=['GET'])
 def debug_auth_test():
     if not app.debug:
@@ -602,6 +651,9 @@ def debug_auth_test():
         results['auth_error'] = str(auth_error)
     return jsonify(results)
 
+# =========================
+# Debug: Firebase Config Check Endpoint
+# =========================
 @app.route('/debug/firebase-config')
 def debug_firebase_config():
     if not app.debug:
@@ -639,6 +691,9 @@ def debug_firebase_config():
         'firebase_admin_initialized': firebase_admin._apps is not None and len(firebase_admin._apps) > 0
     })
 
+# =========================
+# Debug: Test Yelp API Endpoint
+# =========================
 @app.route('/test-yelp-api/<business_id>')
 def test_yelp_api(business_id):
     if not app.debug:
@@ -670,6 +725,9 @@ def test_yelp_api(business_id):
         results['error'] = str(e)
     return jsonify(results)
 
+# =========================
+# Debug: Firebase Admin Check Endpoint
+# =========================
 @app.route('/check-firebase')
 def check_firebase():
     if not app.debug:
@@ -691,6 +749,9 @@ def check_firebase():
             results['firebase_error'] = str(e)
     return jsonify(results)
 
+# =========================
+# Debug: Template Render Test Endpoint
+# =========================
 @app.route('/debug/template-test')
 def debug_template_test():
     if not app.debug:
@@ -715,6 +776,9 @@ def debug_template_test():
     except Exception as e:
         return f"Template error: {str(e)}", 500
 
+# =========================
+# Error Handlers
+# =========================
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('error.html', error_code=404, message="Page not found"), 404
@@ -729,5 +793,8 @@ def template_syntax_error(e):
                           error_code=500,
                           message=f"Template syntax error: {str(e)}"), 500
 
+# =========================
+# Main Entrypoint
+# =========================
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5002)
