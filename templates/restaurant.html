@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ restaurant.name }} - Restaurant Finder{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-3">{{ restaurant.name }}</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="mb-4">
+                <span class="badge bg-primary me-2">
+                    <i class="fas fa-star me-1"></i>{{ restaurant.rating }}
+                </span>
+                <span class="text-muted">{{ restaurant.review_count }} reviews</span>
+                
+                <div class="mt-2">
+                    {% for category in restaurant.categories %}
+                        <span class="badge bg-light text-dark me-1">{{ category.title }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-2">
+                    <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                    {{ restaurant.location.address1 }}, {{ restaurant.location.city }}, {{ restaurant.location.state }} {{ restaurant.location.zip_code }}
+                </div>
+                
+                <div class="mt-2">
+                    <i class="fas fa-phone text-success me-1"></i>
+                    {{ restaurant.display_phone }}
+                </div>
+                
+                {% if restaurant.hours and restaurant.hours[0].is_open_now is defined %}
+                    <div class="mt-2">
+                        {% if restaurant.hours[0].is_open_now %}
+                            <span class="badge bg-success">Open Now</span>
+                        {% else %}
+                            <span class="badge bg-danger">Closed</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <a href="{{ restaurant.url }}" class="btn btn-outline-primary me-2" target="_blank">
+                        <i class="fab fa-yelp me-1"></i>View on Yelp
+                    </a>
+                    
+                    {% if session.get('user') %}
+                        <a href="{{ url_for('add_to_wishlist', business_id=restaurant.id) }}" class="btn btn-outline-danger">
+                            <i class="fas fa-heart me-1"></i>Add to Wishlist
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login to Save
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <h3 class="mb-3">Reviews</h3>
+            {% if reviews %}
+                {% for review in reviews %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>
+                                    <h5 class="card-title">{{ review.user.name }}</h5>
+                                    <div>
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-star me-1"></i>{{ review.rating }}
+                                        </span>
+                                        <small class="text-muted ms-2">{{ review.time_created[:10] }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="card-text">{{ review.text }}</p>
+                            <a href="{{ review.url }}" class="btn btn-sm btn-link" target="_blank">
+                                Read full review on Yelp
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">No reviews available.</div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <img src="{{ restaurant.image_url }}" class="card-img-top" alt="{{ restaurant.name }}">
+                <div class="card-body">
+                    <h5 class="card-title">Location</h5>
+                    <p class="card-text">
+                        {{ restaurant.location.address1 }}<br>
+                        {{ restaurant.location.city }}, {{ restaurant.location.state }} {{ restaurant.location.zip_code }}
+                    </p>
+                    
+                    {% if restaurant.coordinates %}
+                        <div id="map" style="height: 300px;" class="mb-3"></div>
+                    {% endif %}
+                    
+                    <a href="https://maps.google.com/?q={{ restaurant.coordinates.latitude }},{{ restaurant.coordinates.longitude }}" 
+                       class="btn btn-outline-primary w-100" target="_blank">
+                        <i class="fas fa-directions me-1"></i>Get Directions
+                    </a>
+                </div>
+            </div>
+            
+            {% if restaurant.photos and restaurant.photos|length > 1 %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Photos</h5>
+                        <div id="restaurantPhotos" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for photo in restaurant.photos %}
+                                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                        <img src="{{ photo }}" class="d-block w-100" alt="Restaurant photo">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#restaurantPhotos" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#restaurantPhotos" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if restaurant.coordinates %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map if coordinates are available
+    const lat = {{ restaurant.coordinates.latitude }};
+    const lng = {{ restaurant.coordinates.longitude }};
+    
+    // Check if Google Maps API is loaded
+    if (typeof google !== 'undefined') {
+        const map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: lat, lng: lng },
+            zoom: 15
+        });
+        
+        new google.maps.Marker({
+            position: { lat: lat, lng: lng },
+            map: map,
+            title: "{{ restaurant.name }}"
+        });
+    } else {
+        document.getElementById('map').innerHTML = 
+            '<div class="alert alert-warning">Map could not be loaded</div>';
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.carousel-item img {
+    height: 250px;
+    object-fit: cover;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="text-center mb-0">Welcome Back!</h3>
+                </div>
+                <div class="card-body p-4">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('login') }}" class="needs-validation" novalidate id="loginForm">
+                        <div class="form-group mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-2"></i>Email address
+                            </label>
+                            <input type="email" 
+                                   class="form-control form-control-lg" 
+                                   id="email" 
+                                   name="email" 
+                                   required 
+                                   placeholder="Enter your email">
+                            <div class="invalid-feedback">
+                                Please enter a valid email address.
+                            </div>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <input type="password" 
+                                   class="form-control form-control-lg" 
+                                   id="password" 
+                                   name="password" 
+                                   required 
+                                   placeholder="Enter your password">
+                            <div class="invalid-feedback">
+                                Please enter your password.
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </button>
+                            <a href="{{ url_for('register') }}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create New Account
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <p class="text-muted mb-0">Don't have an account?</p>
+                    <a href="{{ url_for('register') }}" class="text-primary">Register here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %} 

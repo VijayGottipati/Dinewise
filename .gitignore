@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+*.env
+
+# Firebase and API credentials
+firebase_config.json
+dinewise-1ade0-firebase-adminsdk-fbsvc-826e342dd1.json
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE/project files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Python virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# Pyrebase cache
+.pyrebase/

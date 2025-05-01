@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-5">
+        <div class="col-md-12 text-center">
+            <h1 class="display-4 mb-3">Find Restaurants Near You</h1>
+            <p class="lead text-muted">Discover amazing dining experiences in your area</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="search-form">
+                <form method="POST" action="{{ url_for('nearby') }}" id="locationForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="address" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>Street Address
+                            </label>
+                            <input type="text" class="form-control" id="address" name="address" 
+                                   placeholder="Enter street address (optional)">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="city" class="form-label">
+                                <i class="fas fa-city me-1"></i>City
+                            </label>
+                            <input type="text" class="form-control" id="city" name="city" required 
+                                   placeholder="Enter city">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="state" class="form-label">
+                                <i class="fas fa-flag-usa me-1"></i>State
+                            </label>
+                            <input type="text" class="form-control" id="state" name="state" 
+                                   placeholder="Enter state">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="zipcode" class="form-label">
+                                <i class="fas fa-mail-bulk me-1"></i>Zip Code
+                            </label>
+                            <input type="text" class="form-control" id="zipcode" name="zipcode" 
+                                   placeholder="Enter zip code">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="country" class="form-label">
+                                <i class="fas fa-globe me-1"></i>Country
+                            </label>
+                            <input type="text" class="form-control" id="country" name="country" 
+                                   placeholder="Enter country (optional)" value="USA">
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="button" class="btn btn-outline-primary me-2" id="getLocation">
+                            <i class="fas fa-location-arrow me-2"></i>Use My Location
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Find Restaurants
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if results %}
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h2 class="mb-4">Nearby Restaurants</h2>
+            <div class="row">
+                {% for restaurant in results %}
+                <div class="col-md-6 mb-4">
+                    <div class="card restaurant-card">
+                        {% if restaurant.image_url %}
+                        <img src="{{ restaurant.image_url }}" class="card-img-top" alt="{{ restaurant.name }}">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ restaurant.name }}</h5>
+                            <div class="mb-3">
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-star"></i> {{ restaurant.rating }} ({{ restaurant.review_count }} reviews)
+                                </span>
+                                {% if restaurant.price %}
+                                <span class="badge bg-info ms-2">{{ restaurant.price }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="card-text">
+                                <i class="fas fa-map-marker-alt"></i> {{ restaurant.location.address1 }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{{ url_for('restaurant_detail', business_id=restaurant.id) }}" 
+                                   class="btn btn-primary">
+                                    <i class="fas fa-info-circle me-1"></i>View Details
+                                </a>
+                                {% if session.get('user_id') %}
+                                <a href="{{ url_for('add_to_wishlist', business_id=restaurant.id) }}" 
+                                   class="btn btn-outline-primary"
+                                   data-bs-toggle="tooltip" 
+                                   title="Add to Wishlist">
+                                    <i class="fas fa-heart"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info mt-4">
+        Enter your address information or use the "Use My Location" button to find nearby restaurants.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.getElementById('getLocation').addEventListener('click', function() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            document.getElementById('latitude').value = position.coords.latitude;
+            document.getElementById('longitude').value = position.coords.longitude;
+        }, function(error) {
+            alert('Error getting location: ' + error.message);
+        });
+    } else {
+        alert('Geolocation is not supported by your browser');
+    }
+});
+</script>
+{% endblock %}

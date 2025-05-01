@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card profile-sidebar">
+                <div class="card-body text-center">
+                    <div class="profile-avatar mb-3">
+                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                    </div>
+                    <h3 class="card-title">{{ session.get('name', 'User') }}</h3>
+                    <p class="text-muted">{{ session.get('email', '') }}</p>
+                    <div class="profile-stats d-flex justify-content-around mt-4">
+                        <div class="stat-item">
+                            <h5 id="reviews-count">0</h5>
+                            <small>Reviews</small>
+                        </div>
+                        <div class="stat-item">
+                            <h5 id="wishlist-count">0</h5>
+                            <small>Wishlist</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#profile-info" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                        <i class="fas fa-user me-2"></i>Profile Information
+                    </a>
+                    <a href="#my-reviews" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                        <i class="fas fa-star me-2"></i>My Reviews
+                    </a>
+                    <a href="#my-wishlist" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                        <i class="fas fa-heart me-2"></i>My Wishlist
+                    </a>
+                    <a href="#account-settings" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                        <i class="fas fa-cog me-2"></i>Account Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="tab-content">
+                <!-- Profile Information -->
+                <div class="tab-pane fade show active" id="profile-info">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h4 class="mb-0">Profile Information</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="profile-form">
+                                <div class="mb-3">
+                                    <label for="display-name" class="form-label">Display Name</label>
+                                    <input type="text" class="form-control" id="display-name" value="{{ session.get('name', '') }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" value="{{ session.get('email', '') }}" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="location" class="form-label">Location</label>
+                                    <input type="text" class="form-control" id="location" placeholder="Enter your city">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bio" class="form-label">Bio</label>
+                                    <textarea class="form-control" id="bio" rows="3" placeholder="Tell us about yourself"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- My Reviews -->
+                <div class="tab-pane fade" id="my-reviews">
+                    <div class="card">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0">My Reviews</h4>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    Sort By
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#">Newest First</a></li>
+                                    <li><a class="dropdown-item" href="#">Highest

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-md-12 text-center">
+                <h1 class="display-3 fw-bold text-white mb-3">Find Your Perfect Restaurant</h1>
+                <p class="lead text-white">Discover amazing dining experiences near you</p>
+            </div>
+        </div>
+        
+        <div class="search-card">
+            <form method="POST" action="{{ url_for('index') }}" id="searchForm">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                            <input type="text" class="form-control" id="location" name="location" required 
+                                   placeholder="Enter city, state, or zip code">
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="term" name="term" 
+                                   placeholder="e.g., pizza, sushi, burgers">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-utensils me-2"></i>Find
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <select class="form-select" id="cuisine" name="cuisine">
+                            <option value="">Select Cuisine (Optional)</option>
+                            <option value="italian">Italian</option>
+                            <option value="mexican">Mexican</option>
+                            <option value="chinese">Chinese</option>
+                            <option value="japanese">Japanese</option>
+                            <option value="indian">Indian</option>
+                            <option value="thai">Thai</option>
+                            <option value="american">American</option>
+                            <option value="french">French</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="price" name="price">
+                            <option value="">Price Range (Optional)</option>
+                            <option value="1">$</option>
+                            <option value="2">$$</option>
+                            <option value="3">$$$</option>
+                            <option value="4">$$$$</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="rating" name="rating">
+                            <option value="">Minimum Rating (Optional)</option>
+                            <option value="3">3+ Stars</option>
+                            <option value="4">4+ Stars</option>
+                            <option value="4.5">4.5+ Stars</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if results %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="section-title">Search Results</h2>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for restaurant in results %}
+                <div class="col">
+                    <div class="card restaurant-card h-100">
+                        <div class="card-img-container">
+                            {% if restaurant.image_url %}
+                            <img src="{{ restaurant.image_url }}" class="card-img-top" alt="{{ restaurant.name }}">
+                            {% else %}
+                            <div class="placeholder-img">
+                                <i class="fas fa-utensils fa-3x"></i>
+                            </div>
+                            {% endif %}
+                            {% if session.get('user') %}
+                            <a href="{{ url_for('add_to_wishlist', business_id=restaurant.id) }}" 
+                               class="wishlist-btn"
+                               data-bs-toggle="tooltip" 
+                               title="Add to Wishlist">
+                                <i class="fas fa-heart"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ restaurant.name }}</h5>
+                            <div class="mb-3">
+                                <div class="rating">
+                                    <span class="rating-score">{{ restaurant.rating }}</span>
+                                    <div class="stars">
+                                        {% for i in range(5) %}
+                                            {% if i < restaurant.rating|int %}
+                                                <i class="fas fa-star"></i>
+                                            {% elif i < restaurant.rating %}
+                                                <i class="fas fa-star-half-alt"></i>
+                                            {% else %}
+                                                <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <span class="review-count">({{ restaurant.review_count }})</span>
+                                </div>
+                                {% if restaurant.price %}
+                                <span class="price-tag">{{ restaurant.price }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="card-text location">
+                                <i class="fas fa-map-marker-alt"></i> {{ restaurant.location.address1 }}
+                            </p>
+                            <a href="{{ url_for('restaurant_detail', business_id=restaurant.id) }}" 
+                               class="btn btn-outline-primary w-100 mt-2">
+                                <i class="fas fa-info-circle me-1"></i>View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="featured-section">
+                <h2 class="section-title">Popular Cuisines</h2>
+                <div class="cuisine-grid">
+                    <a href="#" class="cuisine-card" onclick="selectCuisine('italian')">
+                        <div class="cuisine-icon"><i class="fas fa-pizza-slice"></i></div>
+                        <h3>Italian</h3>
+                    </a>
+                    <a href="#" class="cuisine-card" onclick="selectCuisine('mexican')">
+                        <div class="cuisine-icon"><i class="fas fa-pepper-hot"></i></div>
+                        <h3>Mexican</h3>
+                    </a>
+                    <a href="#" class="cuisine-card" onclick="selectCuisine('japanese')">
+                        <div class="cuisine-icon"><i class="fas fa-fish"></i></div>
+                        <h3>Japanese</h3>
+                    </a>
+                    <a href="#" class="cuisine-card" onclick="selectCuisine('american')">
+                        <div class="cuisine-icon"><i class="fas fa-hamburger"></i></div>
+                        <h3>American</h3>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.getElementById('searchForm').addEventListener('submit', function(e) {
+    const location = document.getElementById('location').value;
+    const term = document.getElementById('term').value;
+    const cuisine = document.getElementById('cuisine').value;
+    
+    if (!location) {
+        alert('Please enter a location to search.');
+        e.preventDefault();
+        return;
+    }
+    
+    // Allow search with just location and any filter
+    // No need to block submission if term or cuisine is empty
+});
+
+function selectCuisine(cuisine) {
+    document.getElementById('cuisine').value = cuisine;
+    // Focus on location if it's empty
+    if (!document.getElementById('location').value) {
+        document.getElementById('location').focus();
+    } else {
+        // If location is already filled, submit the form
+        document.getElementById('searchForm').submit();
+    }
+}
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Nearby Restaurants - Restaurant Finder{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Nearby Restaurants</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Find Restaurants Near You</h5>
+                    <form action="{{ url_for('nearby') }}" method="get" class="row g-3">
+                        <div class="col-md-8">
+                            <label for="location" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="location" name="location" 
+                                   placeholder="Enter address, city, or zip code" value="{{ location }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-1"></i>Search
+                            </button>
+                            <button type="button" id="getLocation" class="btn btn-outline-secondary">
+                                <i class="fas fa-map-marker-alt me-1"></i>Use My Location
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if results %}
+                <div class="row">
+                    {% for restaurant in results %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <img src="{{ restaurant.image_url }}" class="card-img-top restaurant-img" alt="{{ restaurant.name }}" style="height: 200px; object-fit: cover;">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ restaurant.name }}</h5>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-star text-warning me-1"></i>{{ restaurant.rating }} ({{ restaurant.review_count }} reviews)
+                                        </small>
+                                    </p>
+                                    <p class="card-text">
+                                        {% for category in restaurant.categories %}
+                                            <span class="badge bg-light text-dark me-1">{{ category.title }}</span>
+                                        {% endfor %}
+                                    </p>
+                                    <p class="card-text">
+                                        <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                        {{ restaurant.location.address1 }}, {{ restaurant.location.city }}
+                                    </p>
+                                    <p class="card-text">
+                                        <i class="fas fa-route text-success me-1"></i>
+                                        {{ "%.1f"|format(restaurant.distance / 1609.34) }} miles away
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <a href="{{ url_for('restaurant_detail', business_id=restaurant.id) }}" class="btn btn-outline-primary w-100">
+                                        <i class="fas fa-info-circle me-1"></i>View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif location %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No restaurants found near this location. Try a different location or search term.
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>Enter a location to find nearby restaurants.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const locationButton = document.getElementById('getLocation');
+    const locationInput = document.getElementById('location');
+    
+    if (locationButton) {
+        locationButton.addEventListener('click', function() {
+            if (navigator.geolocation) {
+                locationButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Getting location...';
+                locationButton.disabled = true;
+                
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // Use reverse geocoding to get location name
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                let location = '';
+                                if (data && data.address) {
+                                    const city = data.address.city || data.address.town || data.address.village;
+                                    const state = data.address.state;
+                                    if (city && state) {
+                                        location = `${city}, ${state}`;
+                                    }
+                                }
+                                
+                                if (location) {
+                                    locationInput.value = location;
+                                    locationInput.form.submit();
+                                } else {
+                                    // If geocoding fails, use coordinates
+                                    locationInput.value = `${lat},${lng}`;
+                                    locationInput.form.submit();
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error with geocoding:", error);
+                                // If geocoding fails, use coordinates
+                                locationInput.value = `${lat},${lng}`;
+                                locationInput.form.submit();
+                            })
+                            .finally(() => {
+                                locationButton.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i>Use My Location';
+                                locationButton.disabled = false;
+                            });
+                    },
+                    function(error) {
+                        console.error("Geolocation error:", error);
+                        alert("Could not get your location. Please enter it manually.");
+                        locationButton.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i>Use My Location';
+                        locationButton.disabled = false;
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by your browser. Please enter your location manually.");
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

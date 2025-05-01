@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block head_extra %}  <-- It's right here
+<style>
+    #map { height: 300px; width: 100%; margin-bottom: 20px; } /* Style for the map container */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {# Notification Section for Promotions/Updates #}
+    {% if show_new_user_promo %} {# Example condition: Pass this variable from your Flask route #}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-bullhorn me-2"></i>
+        <strong>Welcome!</strong> As a special welcome offer, enjoy a 10% discount on your first order through our platform! (Use code NEW10 at checkout).
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    {# End Notification Section #}
+    
+    {% if restaurant %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                {% if restaurant.image_url %}
+                <img src="{{ restaurant.image_url }}" class="card-img-top" alt="{{ restaurant.name }}" style="height: 400px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h1 class="card-title">{{ restaurant.name }}</h1>
+                    <div class="mb-3"> <!-- This div now mainly holds price and categories -->
+                        </span>
+                        {% if restaurant.price %}
+                        <span class="badge bg-info ms-2">{{ restaurant.price }}</span>
+                        {% endif %}
+                        
+                        <!-- Categories -->
+                        {% if restaurant.categories %}
+                            {% for category in restaurant.categories %}
+                                <span class="badge bg-secondary ms-2">{{ category.title }}</span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Insert the new ratings section here -->
+                    <div class="ratings-section mb-3">
+                        <h4 class="mb-3">Ratings</h4>
+                        <div class="d-flex flex-wrap align-items-center"> <!-- Use flexbox for side-by-side -->
+                            <!-- Yelp Rating -->
+                            {% if restaurant.rating %}
+                                <div class="me-3 mb-2"> <!-- Margin end for spacing -->
+                                    <strong>Yelp:</strong>
+                                    <span class="badge bg-warning text-dark ms-1">{{ restaurant.rating }} / 5</span>
+                                    <small class="text-muted ms-1">({{ restaurant.review_count }} reviews)</small>
+                                </div>
+                            {% else %}
+                                <div class="me-3 mb-2"><span class="badge bg-secondary">Yelp: N/A</span></div>
+                            {% endif %}
+
+                            <!-- Dinewise Rating -->
+                            {% if dinewise_rating is not none %}
+                                <div class="me-3 mb-2">
+                                    <strong>Dinewise:</strong>
+                                    <span class="badge bg-primary ms-1">{{ dinewise_rating }} / 5</span>
+                                    <small class="text-muted ms-1">({{ user_reviews|length }} reviews)</small>
+                                </div>
+                            {% else %}
+                                <div class="me-3 mb-2"><span class="badge bg-secondary">Dinewise: N/A</span></div>
+                            {% endif %}
+
+                            <!-- Average Rating -->
+                            {% if weighted_average_rating is not none %}
+                                <div class="mb-2"> <!-- No margin end for the last item -->
+                                    <strong>Average:</strong>
+                                    <span class="badge bg-success ms-1">{{ weighted_average_rating }} / 5</span>
+                                    <small class="text-muted ms-1">({{ total_combined_reviews }} total reviews)</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Contact and Address -->
+                    <div class="mb-3">
+                        {% if restaurant.display_phone %}
+                            <p><i class="fas fa-phone me-2"></i>{{ restaurant.display_phone }}</p>
+                        {% endif %}
+                        
+                        {% if restaurant.location and restaurant.location.display_address %}
+                            <p><i class="fas fa-map-marker-alt me-2"></i>{{ restaurant.location.display_address|join(', ') }}</p>
+                        {% endif %}
+                    </div>
+
+                    
+                    <!-- External Links -->
+                    <div class="mb-4">
+                        <a href="{{ restaurant.url }}" class="btn btn-outline-primary me-2" target="_blank">
+                            <i class="fab fa-yelp me-1"></i>View on Yelp
+                        </a>
+                        
+                        {% if restaurant.coordinates %}
+                        <a href="https://maps.google.com/?q={{ restaurant.coordinates.latitude }},{{ restaurant.coordinates.longitude }}" 
+                           class="btn btn-outline-secondary me-2" target="_blank">
+                            <i class="fas fa-directions me-1"></i>Get Directions
+                        </a>
+                        {% endif %}
+                        
+                        {% if session.get('user') %}
+                            <a href="{{ url_for('add_to_wishlist', business_id=restaurant.id) }}" class="btn btn-outline-danger">
+                                <i class="fas fa-heart me-1"></i>Add to Wishlist
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-sign-in-alt me-1"></i>Login to Save
+                            </a>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Yelp Reviews Section -->
+                    <h3 class="mb-3">Yelp Reviews</h3>
+                    {% if yelp_reviews %}
+                        {% for review in yelp_reviews %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <div>
+                                            <h5 class="card-title">{{ review.user.name }}</h5>
+                                            <div>
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-star me-1"></i>{{ review.rating }}
+                                                </span>
+                                                <small class="text-muted ms-2">{{ review.time_created[:10] }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="card-text">{{ review.text }}</p>
+                                    <a href="{{ review.url }}" class="btn btn-sm btn-link" target="_blank">
+                                        Read full review on Yelp
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">No Yelp reviews available.</div>
+                    {% endif %}
+                    
+                    <!-- User Reviews Section -->
+                    <h3 class="mt-4 mb-3">User Reviews</h3>
+                    {% if user_reviews %}
+                        {% for review in user_reviews %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <div>
+                                            <h5 class="card-title">{{ review.user_name }}</h5>
+                                            <div>
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-star me-1"></i>{{ review.rating }}
+                                                </span>
+                                                <small class="text-muted ms-2">{{ review.timestamp[:10] }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="card-text">{{ review.comment }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">No user reviews yet.</div>
+                    {% endif %}
+                    
+                    <!-- Add Review Form (only for logged in users) -->
+                    {% if session.get('user') %}
+                        <div class="card mt-4">
+                            <div class="card-header bg-primary text-white">
+                                <h4 class="mb-0">Write a Review</h4>
+                            </div>
+                            <div class="card-body">
+                                <form action="{{ url_for('add_review', business_id=restaurant.id) }}" method="post">
+                                    <div class="mb-3">
+                                        <label for="rating" class="form-label">Rating</label>
+                                        <select class="form-select" id="rating" name="rating" required>
+                                            <option value="">Select a rating</option>
+                                            <option value="5">5 - Excellent</option>
+                                            <option value="4">4 - Very Good</option>
+                                            <option value="3">3 - Good</option>
+                                            <option value="2">2 - Fair</option>
+                                            <option value="1">1 - Poor</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="comment" class="form-label">Your Review</label>
+                                        <textarea class="form-control" id="comment" name="comment" rows="4" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary mt-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <a href="{{ url_for('login') }}">Log in</a> to write a review.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right sidebar with map and additional info -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Location</h5>
+                    {# Google Map Container - Only show if coordinates are available #}
+                    {% if latitude and longitude %}
+                    <div id="map"></div> {# Map will be rendered here #}
+                    {% else %}
+                    <p class="text-muted"><small>Map location unavailable.</small></p>
+                    {% endif %}
+                    {# Display address text below the map if available #}
+                    {% if restaurant.location and restaurant.location.display_address %}
+                        <p class="card-text mt-2"> <!-- Added margin-top for spacing -->
+                            <i class="fas fa-map-marker-alt me-1 text-secondary"></i>
+                            {{ restaurant.location.display_address|join(', ') }}
+                        </p>
+                    {% endif %}
+                    
+                </div>
+            </div>
+            
+            <!-- Hours of operation if available -->
+            {% if restaurant.hours %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Hours</h5>
+                        <ul class="list-group list-group-flush">
+                            {% for hour in restaurant.hours[0].open %}
+                                <li class="list-group-item">
+                                    {{ ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][hour.day] }}:
+                                    {{ hour.start[:2] }}:{{ hour.start[2:] }} - 
+                                    {{ hour.end[:2] }}:{{ hour.end[2:] }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-danger">
+        Restaurant not found. Please try again.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {# Google Maps API Script - Only include if key and coordinates are present #}
+    {% if gmaps_api_key and latitude and longitude %}
+    <script>
+        function initMap() {
+            // Use the coordinates passed from Flask
+            const restaurantLocation = { lat: {{ latitude | tojson }}, lng: {{ longitude | tojson }} };
+            // The map, centered at the restaurant location
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 15, // Adjust zoom level as needed
+                center: restaurantLocation,
+                mapId: 'DINEWISE_RESTAURANT_MAP' // Optional: Use Map IDs for advanced styling
+            });
+            // The marker, positioned at the restaurant location
+            const marker = new google.maps.marker.AdvancedMarkerElement({
+                map: map,
+                position: restaurantLocation,
+                title: {{ restaurant.name | tojson }}, // Show restaurant name on hover
+            });
+        }
+    </script>
+    {# Load the Google Maps API asynchronously, calling initMap when loaded #}
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key={{ gmaps_api_key }}&callback=initMap&libraries=marker&v=beta">
+    </script>
+    {% endif %}
+{% endblock %}

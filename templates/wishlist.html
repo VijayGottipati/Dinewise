@@ -1,0 +1,68 @@
+<!-- templates/wishlist.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">My Wishlist</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if restaurants %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for restaurant in restaurants %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        {% if restaurant.image_url %}
+                            <img src="{{ restaurant.image_url }}" class="card-img-top" alt="{{ restaurant.name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-utensils fa-3x"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ restaurant.name }}</h5>
+                            <div class="mb-2">
+                                <span class="badge bg-primary">{{ restaurant.rating }} ★</span>
+                                <span class="badge bg-secondary">{{ restaurant.review_count }} reviews</span>
+                                <span class="badge bg-success">{{ restaurant.price if restaurant.price else 'N/A' }}</span>
+                            </div>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    {{ restaurant.location.address1 }}, {{ restaurant.location.city }}
+                                </small>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{{ url_for('restaurant_detail', business_id=restaurant.id) }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-info-circle"></i> Details
+                                </a>
+                                <a href="{{ url_for('remove_from_wishlist', business_id=restaurant.id) }}" class="btn btn-outline-danger">
+                                    <i class="fas fa-heart-broken"></i> Remove
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center my-5">
+            <i class="fas fa-heart-broken fa-4x text-muted mb-3"></i>
+            <h3>Your wishlist is empty</h3>
+            <p class="text-muted">Start adding restaurants to your wishlist by searching for them!</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search Restaurants
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
