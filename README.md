@@ -1,4 +1,3 @@
-```markdown
 # DineWise: Restaurant Discovery & Review Platform
 
 DineWise is a Flask-based web application that helps users discover restaurants, view details and reviews, and manage wishlists. It integrates with the Yelp API for restaurant data and Google Maps for location features. User authentication and data storage are handled via Firebase.
