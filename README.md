@@ -142,9 +142,9 @@ DineWise is a Flask-based web application that helps users discover restaurants,
 4. Vijay Gotipati
 
 ---
-```
 
-Citations:
+## Citations:
+```
 [1] https://firebase.google.com/docs/studio/get-started-template
 [2] https://firebase.google.com/docs/firestore/best-practices
 [3] https://firebase.google.com/docs/samples
@@ -153,3 +153,4 @@ Citations:
 [6] https://developers.google.com/maps/documentation/places/web-service/web-services-best-practices
 [7] https://stackoverflow.com/questions/72093172/how-to-display-a-google-map-in-flask-django
 [8] https://stackoverflow.com/questions/41149079/working-with-yelp-api-and-or-google-places-api
+```
