@@ -2,6 +2,9 @@
 
 DineWise is a Flask-based web application that helps users discover restaurants, view details and reviews, and manage wishlists. It integrates with the Yelp API for restaurant data and Google Maps for location features. User authentication and data storage are handled via Firebase.
 
+## Demo Video
+Video Link - https://drive.google.com/file/d/1A1PCicaIyDGobH43OVXhhr8vMG_zRtbV/view?usp=sharing
+
 ---
 
 ## Features
@@ -11,7 +14,7 @@ DineWise is a Flask-based web application that helps users discover restaurants,
 - Restaurant search by current location
 - Restaurant detail pages with Yelp and user reviews
 - Add, view, and remove restaurants from wishlists
-- Submit and display user reviews and ratings  
+- Submit and display user reviews and ratings
 - Google Maps integration for restaurant locations
 - Admin/debug endpoints for API and Firebase checks
 
@@ -40,8 +43,8 @@ DineWise is a Flask-based web application that helps users discover restaurants,
 
 1. **Clone the repository:**
    ```
-   git clone 
-   cd 
+   git clone https://github.com/VijayGottipati/Dinewise.git
+   cd Dinewise
    ```
 
 2. **Create and activate a virtual environment:**
@@ -84,7 +87,7 @@ DineWise is a Flask-based web application that helps users discover restaurants,
 
    ### How to Obtain the JSON Files
 
-   - **firebase_config.json**  
+   - **firebase_config.json**
      - Go to the [Firebase Console](https://console.firebase.google.com/) and select your project.
      - Click the gear icon next to **Project Overview** and choose **Project settings**.
      - In the **General** tab, scroll to the **Your apps** section.
@@ -93,7 +96,7 @@ DineWise is a Flask-based web application that helps users discover restaurants,
      - Copy the configuration snippet (it looks like a JavaScript object).
      - Paste it into a text editor, format it as JSON (with double quotes), and save it as `firebase_config.json` in your project root.
 
-   - **dinewise-1ade0-firebase-adminsdk-fbsvc-826e342dd1.json**  
+   - **dinewise-1ade0-firebase-adminsdk-fbsvc-826e342dd1.json**
      - In the Firebase Console, go to **Project settings** > **Service Accounts**.
      - Click **Generate new private key** and confirm.
      - This will download a JSON file (named like `dinewise-1ade0-firebase-adminsdk-xxxx.json`).
